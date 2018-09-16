@@ -43,7 +43,7 @@ print("====== Start Training ======")
 
 from keras.models import Sequential
 from keras.layers import Dense, LSTM, Dropout, Conv1D, MaxPooling1D, Flatten, TimeDistributed
-from keras.callbacks import  EarlyStopping, ReduceLROnPlateau, ModelCheckpoint, TensorBoard
+from keras.callbacks import  EarlyStopping, ReduceLROnPlateau, ModelCheckpoint, TensorBoard, RemoteMonitor
 
 """
 regressor.add(TimeDistributed(Conv1D(nb_filter=256, filter_length=16, input_shape=input_shape, activation="relu")))
@@ -88,10 +88,11 @@ regressor.compile(optimizer = 'adam', loss = 'mean_squared_error')
 mcp = ModelCheckpoint('lstm_weights/weights{epoch:04d}.h5', save_weights_only=True, period=5)
 tb = TensorBoard('logs')
 #es = EarlyStopping(monitor='val_loss', min_delta=1e-10, patience=10, verbose=1)
-rlr = ReduceLROnPlateau(monitor='val_loss', factor=0.9, patience=5, verbose=1)
+rlr = ReduceLROnPlateau(monitor='val_loss', factor=0.8, patience=10, verbose=1, min_lr=0.0005)
+remote = RemoteMonitor(root='http://0.0.0.0:9000', path='/publish/epoch/end/', field='data', headers=None, send_as_json=False)
 
-regressor.fit(input_data, output_data, epochs = 300, shuffle=True,
-              callbacks=[rlr,mcp, tb], validation_split=0.2, verbose=1, batch_size=64)
+regressor.fit(input_data, output_data, epochs = 1000, shuffle=True,
+              callbacks=[rlr,mcp, tb,remote], validation_split=0.2, verbose=1, batch_size=64)
 
 model_json = regressor.to_json()
 with open('lstm_weights/last_model.json', 'w') as json_file:
